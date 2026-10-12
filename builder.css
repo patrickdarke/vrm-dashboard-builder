@@ -61,7 +61,7 @@ legend { padding: 0 6px; margin-left: -6px; font-weight: 650; display: flex; ali
 
 .field { display: grid; gap: 5px; min-width: 0; }
 .lbl { font-weight: 600; font-size: 14px; }
-.help { font-size: 13px; color: var(--muted); }
+.help { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
 .help b { color: var(--ink-2); }
 .err { font-size: 13px; color: var(--critical); min-height: 0; }
 .err:empty { display: none; }
