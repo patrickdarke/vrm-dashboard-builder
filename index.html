@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VRM Dashboard Builder</title>
+<meta name="description" content="Build your own password-protected Victron VRM dashboard for any PHP web host. Runs entirely in your browser.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='2' y='4' width='11' height='9' rx='2' fill='%2319a06e'/%3E%3Crect x='13' y='7' width='2' height='3' fill='%2319a06e'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="builder.css">
+</head>
+<body>
+<header class="top">
+  <div>
+    <h1>VRM Dashboard Builder</h1>
+    <p class="sub">Your own live Victron dashboard on any PHP web host — battery, solar, loads, history, GPS map, tanks and climate.</p>
+  </div>
+  <a class="btn ghost" href="https://github.com/" id="repo-link" target="_blank" rel="noopener">Source on GitHub ↗</a>
+</header>
+
+<main class="layout">
+  <form id="form" class="form" novalidate autocomplete="off">
+    <p class="privacy"><b>Private by design.</b> Everything happens in this browser tab. Your VRM token and password are written
+      straight into the file you download — nothing is sent to any server, including this one.</p>
+
+    <fieldset>
+      <legend><span class="step">1</span>Connect to VRM</legend>
+      <label class="field">
+        <span class="lbl">Installation ID</span>
+        <input id="site" inputmode="numeric" placeholder="e.g. 123456" required>
+        <span class="help">The number in your VRM address: vrm.victronenergy.com/installation/<b>123456</b>/dashboard</span>
+        <span class="err" data-for="site"></span>
+      </label>
+      <label class="field">
+        <span class="lbl">Access token</span>
+        <span class="with-btn">
+          <input id="token" type="password" placeholder="64-character token" spellcheck="false" required>
+          <button type="button" class="btn sm" data-toggle="token">Show</button>
+        </span>
+        <span class="help">VRM → Preferences → Integrations → Access tokens → Add. Make one just for this dashboard so you can revoke it on its own.</span>
+        <span class="err" data-for="token"></span>
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend><span class="step">2</span>Branding</legend>
+      <label class="field">
+        <span class="lbl">Dashboard title</span>
+        <input id="title" maxlength="60" placeholder="e.g. Basecamp Power" value="My VRM Dashboard">
+        <span class="err" data-for="title"></span>
+      </label>
+      <div class="field">
+        <span class="lbl">Default theme</span>
+        <div class="seg" role="radiogroup" aria-label="Default theme" data-name="theme">
+          <button type="button" data-v="auto" class="on" role="radio" aria-checked="true">Match device</button>
+          <button type="button" data-v="light" role="radio" aria-checked="false">Light</button>
+          <button type="button" data-v="dark" role="radio" aria-checked="false">Dark</button>
+        </div>
+        <span class="help">Visitors can still flip it with the ◐ button.</span>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend><span class="step">3</span>Units</legend>
+      <div class="seg" role="radiogroup" aria-label="Units" data-name="units">
+        <button type="button" data-v="us" class="on" role="radio" aria-checked="true">US — °F, gal, mi, ft, mph, inHg</button>
+        <button type="button" data-v="metric" role="radio" aria-checked="false">Metric — °C, L, km, m, km/h, hPa</button>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend><span class="step">4</span>Panels</legend>
+      <div class="checks" id="panels">
+        <label class="check"><input type="checkbox" value="tiles" checked><span><b>Live tiles</b><small>Battery, solar, loads, inverter/chargers</small></span></label>
+        <label class="check"><input type="checkbox" value="history" checked><span><b>History charts</b><small>State of charge, battery power, solar vs loads — 6 h to 7 days</small></span></label>
+        <label class="check"><input type="checkbox" value="location" checked><span><b>Map &amp; GPS tracks</b><small>Live position + a year of trips with GPX/KML download. Needs a GPS on the GX.</small></span></label>
+        <label class="check"><input type="checkbox" value="lpg" checked><span><b>Tanks</b><small>Mopeka and other tank sensors</small></span></label>
+        <label class="check"><input type="checkbox" value="climate" checked><span><b>Climate</b><small>RuuviTag and other temperature sensors</small></span></label>
+        <label class="check"><input type="checkbox" value="devices" checked><span><b>All devices</b><small>Searchable list of every value VRM reports</small></span></label>
+      </div>
+      <p class="note" id="loc-note" hidden>Location is off: position data is removed on the server too, not just hidden.</p>
+    </fieldset>
+
+    <fieldset>
+      <legend><span class="step">5</span>Password</legend>
+      <label class="switch"><input type="checkbox" id="pw-on" checked><span>Require a username and password</span></label>
+      <div id="pw-fields">
+        <div class="row2">
+          <label class="field">
+            <span class="lbl">Username</span>
+            <input id="user" placeholder="e.g. camp" autocomplete="off" spellcheck="false">
+            <span class="err" data-for="user"></span>
+          </label>
+          <label class="field">
+            <span class="lbl">Password</span>
+            <span class="with-btn">
+              <input id="pw" type="password" autocomplete="new-password">
+              <button type="button" class="btn sm" data-toggle="pw">Show</button>
+            </span>
+            <span class="meter"><i id="pw-bar"></i></span>
+            <span class="help" id="pw-help">At least 10 characters; a short phrase is best.</span>
+            <span class="err" data-for="pw"></span>
+          </label>
+        </div>
+        <p class="help">Stored only as a bcrypt hash. Password-protected dashboards only work over HTTPS — most hosts provide it free.</p>
+      </div>
+      <p class="warn" id="pw-off-note" hidden><b>Anyone with the link can see this dashboard</b><span id="pw-off-loc">, including your live location</span>.
+        It stays out of search engines, but links get shared.</p>
+    </fieldset>
+
+    <fieldset>
+      <legend><span class="step">6</span>Folder</legend>
+      <label class="field">
+        <span class="lbl">Folder name on your site</span>
+        <input id="folder" value="dashboard" spellcheck="false">
+        <span class="help">Your dashboard will be at <code>https://your-site.com/<b id="folder-echo">dashboard</b>/</code></span>
+        <span class="err" data-for="folder"></span>
+      </label>
+    </fieldset>
+  </form>
+
+  <aside class="side">
+    <div class="card">
+      <div class="card-head"><b>Preview</b><span class="muted" id="pv-units">US units</span></div>
+      <div class="pv" id="pv">
+        <div class="pv-top"><span id="pv-title">My VRM Dashboard</span><span class="pv-lock" id="pv-lock">🔒</span></div>
+        <div class="pv-tiles" data-p="tiles"><i></i><i></i><i></i><i></i></div>
+        <div class="pv-block pv-hist" data-p="history"><span>History</span></div>
+        <div class="pv-block pv-map" data-p="location"><span>Map &amp; tracks</span></div>
+        <div class="pv-row"><div class="pv-block" data-p="lpg"><span>Tanks</span></div><div class="pv-block" data-p="climate"><span>Climate</span></div></div>
+        <div class="pv-block pv-dev" data-p="devices"><span>All devices</span></div>
+      </div>
+    </div>
+    <button class="btn primary big" id="build" type="button">Download dashboard (.zip)</button>
+    <p class="err center" id="build-err" role="alert"></p>
+
+    <div class="card steps">
+      <b>Install</b>
+      <ol>
+        <li>Unzip. You get a folder named <code id="st-folder">dashboard</code>.</li>
+        <li>Upload the whole folder to your website with SFTP, next to your other site files (the same place your <code>index.php</code> or WordPress files live).</li>
+        <li>Open <code>https://your-site.com/<span id="st-folder2">dashboard</span>/</code><span id="st-login"> and sign in</span>.</li>
+      </ol>
+      <p class="help">Needs PHP 7.4+ with cURL — standard on DreamHost, Bluehost, SiteGround, Hostinger and most others. Keep <code>config.php</code> private: it holds your token.</p>
+    </div>
+  </aside>
+</main>
+
+<footer class="foot">Not affiliated with Victron Energy. VRM data via the public VRM API. Maps © OpenStreetMap contributors, Esri, OpenTopoMap.</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>
+<script src="builder.js"></script>
+</body>
+</html>

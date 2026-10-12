@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}}</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='2' y='4' width='11' height='9' rx='2' fill='%2319a06e'/%3E%3Crect x='13' y='7' width='2' height='3' fill='%2319a06e'/%3E%3C/svg%3E">
+<!--panel:location--><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"><!--/panel:location-->
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="title">
+    <h1>{{TITLE}}</h1>
+    <span class="sub" id="site-sub">VRM site —</span>
+  </div>
+  <div class="top-right">
+    <span class="pill" id="status-pill"><span class="dot"></span><span id="status-text">Connecting…</span></span>
+    <button class="btn" id="refresh-btn" title="Poll VRM now">Refresh</button>
+    <button class="btn icon" id="theme-btn" title="Toggle light/dark" aria-label="Toggle theme">◐</button>
+  </div>
+</header>
+
+<main>
+  <div id="alarms" class="alarms" hidden></div>
+  <div id="error" class="error-banner" hidden></div>
+
+  <!--panel:tiles-->
+  <section class="tiles" id="tiles">
+    <article class="tile battery" id="tile-battery">
+      <div class="tile-head"><span class="swatch s-batt"></span>Battery</div>
+      <div class="hero"><span id="soc">—</span><span class="unit">%</span></div>
+      <div class="soc-bar"><div class="soc-fill" id="soc-fill"></div></div>
+      <dl class="kv" id="batt-kv"></dl>
+    </article>
+    <article class="tile" id="tile-solar">
+      <div class="tile-head"><span class="swatch s-solar"></span>Solar</div>
+      <div class="hero"><span id="solar-w">—</span><span class="unit">W</span></div>
+      <dl class="kv" id="solar-kv"></dl>
+    </article>
+    <article class="tile" id="tile-loads">
+      <div class="tile-head"><span class="swatch s-load"></span>Loads</div>
+      <div class="hero"><span id="load-w">—</span><span class="unit">W</span></div>
+      <dl class="kv" id="load-kv"></dl>
+    </article>
+    <article class="tile" id="tile-chargers">
+      <div class="tile-head">Inverter / chargers</div>
+      <dl class="kv" id="chg-kv"></dl>
+    </article>
+  </section>
+  <!--/panel:tiles-->
+
+  <!--panel:history-->
+  <section class="panel">
+    <div class="panel-head">
+      <h2>History</h2>
+      <div class="seg" id="range" role="group" aria-label="Time range">
+        <button data-h="6">6h</button><button data-h="24" class="on">24h</button><button data-h="72">3d</button><button data-h="168">7d</button>
+      </div>
+    </div>
+    <div class="charts">
+      <figure class="chart-card">
+        <figcaption>Battery state of charge <span class="muted">%</span></figcaption>
+        <div class="chart" id="chart-soc"></div>
+      </figure>
+      <figure class="chart-card">
+        <figcaption>Battery power <span class="muted">W · + charging, − discharging</span></figcaption>
+        <div class="chart" id="chart-battw"></div>
+      </figure>
+      <figure class="chart-card wide">
+        <figcaption>Solar vs loads <span class="muted">W</span>
+          <span class="legend"><span><i class="swatch s-solar"></i>Solar</span><span><i class="swatch s-load"></i>Loads (AC + DC)</span></span>
+        </figcaption>
+        <div class="chart" id="chart-power"></div>
+      </figure>
+    </div>
+  </section>
+  <!--/panel:history-->
+
+  <!--panel:location-->
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Location</h2>
+      <div class="seg" id="basemap" role="group" aria-label="Map style">
+        <button data-l="map" class="on">Map</button><button data-l="topo">Topo</button><button data-l="sat">Satellite</button>
+      </div>
+    </div>
+    <dl class="gps-strip" id="gps-strip"></dl>
+    <div class="loc">
+      <div class="map" id="map" aria-label="Map of current position and GPS tracks"></div>
+      <aside class="tracks">
+        <div class="tracks-head">
+          <b>Track logs</b>
+          <span class="muted" id="tracks-meta"></span>
+        </div>
+        <div class="tracks-tools">
+          <label class="chk"><input type="checkbox" id="tracks-range" checked> Match history range</label>
+          <span class="spacer"></span>
+          <button class="link" id="tracks-all">All</button><button class="link" id="tracks-none">None</button>
+        </div>
+        <ul class="track-list" id="track-list"></ul>
+        <div class="tracks-dl">
+          <span class="muted">Download shown:</span>
+          <a class="btn sm" id="dl-gpx" href="#">GPX</a><a class="btn sm" id="dl-kml" href="#">KML</a>
+        </div>
+      </aside>
+    </div>
+  </section>
+  <!--/panel:location-->
+
+  <div class="two-col">
+    <!--panel:lpg-->
+    <section class="panel">
+      <div class="panel-head"><h2>Tanks</h2></div>
+      <div id="tanks" class="tanks"><p class="muted">No tank sensors reporting.</p></div>
+    </section>
+    <!--/panel:lpg-->
+    <!--panel:climate-->
+    <section class="panel">
+      <div class="panel-head"><h2>Climate</h2></div>
+      <div id="climate" class="climate"><p class="muted">No temperature sensors reporting.</p></div>
+    </section>
+    <!--/panel:climate-->
+  </div>
+
+  <!--panel:devices-->
+  <section class="panel">
+    <div class="panel-head">
+      <h2>All devices</h2>
+      <input id="filter" class="filter" type="search" placeholder="Filter attributes…" aria-label="Filter attributes">
+    </div>
+    <div id="devices" class="devices"></div>
+  </section>
+  <!--/panel:devices-->
+
+  <footer class="foot muted" id="foot"></footer>
+</main>
+
+<div class="tooltip" id="tooltip" hidden></div>
+<!--panel:location--><script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script><!--/panel:location-->
+<script src="app.js"></script>
+<!--panel:location--><script src="map.js"></script><!--/panel:location-->
+</body>
+</html>

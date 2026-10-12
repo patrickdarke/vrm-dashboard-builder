@@ -1,0 +1,11 @@
+# Extra hardening for Apache hosts (nginx ignores this file; index.php protects itself either way).
+Options -Indexes
+DirectoryIndex index.php
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Settings and cached data are only for index.php to read.
+    RewriteRule ^(config\.php|cache/) - [F,L]
+</IfModule>
+<IfModule mod_headers.c>
+    Header always set X-Robots-Tag "noindex, nofollow"
+</IfModule>

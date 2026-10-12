@@ -1,0 +1,6 @@
+# Generated dashboards contain a VRM token — never commit them.
+config.php
+!template/config.php
+*.zip
+cache/
+.DS_Store
